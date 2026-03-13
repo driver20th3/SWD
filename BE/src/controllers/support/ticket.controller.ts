@@ -14,7 +14,20 @@ const createTicketSchema = z.object({
 });
 
 const updateTicketSchema = z.object({
-  status: z.enum(["ModeratorAssigned", "InReview", "NeedMoreInfo", "Resolved", "Closed"]).optional(),
+  status: z
+    .enum([
+      "PENDING_SELLER",
+      "SELLER_APPROVED",
+      "SELLER_REJECTED",
+      "AUTO_ESCALATED",
+      "MODERATOR_REVIEW",
+      "RESOLVED_REFUNDED",
+      "CLOSED_REJECTED",
+      "APPEAL_FILED",
+      "APPEAL_REVIEW",
+      "APPEAL_CLOSED",
+    ])
+    .optional(),
   priority: z.enum(["Low", "Medium", "High", "Urgent"]).optional(),
   assignedToUserId: z.string().optional(),
   resolutionType: z.enum(["None", "FullRefund", "PartialRefund", "Replace", "Reject"]).optional(),

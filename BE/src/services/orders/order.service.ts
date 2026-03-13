@@ -599,7 +599,7 @@ export class OrderService extends BaseService<IOrder> {
       }
 
       // Check for open complaints
-      const openTicket = await InventoryItem.findOne({
+      await InventoryItem.findOne({
         _id: {
           $in: orderItems
             .map((item) => item.inventoryItemId)

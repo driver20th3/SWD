@@ -17,8 +17,7 @@ import {
 const ComplaintEvidenceSchema = new Schema<IComplaintEvidence>(
   {
     uploadedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     type: {
@@ -46,8 +45,7 @@ const ComplaintEvidenceSchema = new Schema<IComplaintEvidence>(
 const InternalNoteSchema = new Schema<IInternalNote>(
   {
     authorUserId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     content: {
@@ -79,8 +77,7 @@ const SellerPenaltySchema = new Schema<ISellerPenalty>(
       default: Date.now,
     },
     issuedByUserId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     duration: {
@@ -99,8 +96,7 @@ const SellerPenaltySchema = new Schema<ISellerPenalty>(
 const OrderSnapshotSchema = new Schema<IOrderSnapshot>(
   {
     orderId: {
-      type: Schema.Types.ObjectId,
-      ref: "Order",
+      type: String,
       required: true,
     },
     orderCode: {
