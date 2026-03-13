@@ -174,7 +174,7 @@ function CreateComplaintContent() {
               if (["Delivered", "Completed"].includes(item.itemStatus)) {
                 items.push({
                   id: item._id,
-                  orderId: order._id,
+                  orderId: order._id ?? order.id,
                   orderCode: order.orderCode,
                   productTitle: item.productId?.title || "Sản phẩm",
                   shopName: item.shopId?.name || "Shop",
