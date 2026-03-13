@@ -186,7 +186,7 @@ export interface Pagination {
 
 export interface ListResponse<T> {
   success: boolean;
-  data: T[];
+  data?: T[];
   pagination?: Pagination;
 }
 
