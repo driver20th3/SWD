@@ -118,6 +118,7 @@ export type PaymentProvider = "Wallet" | "Momo" | "Vnpay" | "Zalopay";
 
 export interface Order {
   id: string; // _id from orders collection
+  _id?: string; // MongoDB _id (may be returned directly from API)
   orderCode: string; // orderCode in schema
   customerUserId: string; // Reference to users._id
   customer?: Customer;
