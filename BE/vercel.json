@@ -17,13 +17,7 @@
     "VERCEL": "1"
   },
   "regions": ["sin1"],
-  "functions": {
-    "dist/index.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
-  "crons": [
+    "crons": [
     {
       "path": "/api/disbursement/cron/process?secret=${CRON_SECRET}",
       "schedule": "0 * * * *"
