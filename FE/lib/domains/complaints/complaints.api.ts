@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from "../../api";
+import type { ApiResponse } from "../../api";
 import * as T from "./complaints.types";
 
 export const complaintsApi = {
@@ -13,7 +14,7 @@ export const complaintsApi = {
    * Tạo khiếu nại mới (Buyer)
    * POST /api/complaints
    */
-  async create(data: T.CreateComplaintRequest): Promise<T.DetailResponse<T.Complaint>> {
+  async create(data: T.CreateComplaintRequest): Promise<ApiResponse<T.Complaint>> {
     return await apiClient.post<T.Complaint>("/complaints", data);
   },
 

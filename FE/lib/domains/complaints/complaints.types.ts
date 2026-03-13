@@ -193,7 +193,7 @@ export interface ListResponse<T> {
 export interface DetailResponse<T> {
   success: boolean;
   message?: string;
-  data: T;
+  data?: T;
 }
 
 export interface QueueStats {
