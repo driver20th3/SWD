@@ -8,6 +8,7 @@ export type {
   ComplaintCategory,
   ComplaintSubcategory,
   ComplaintEvidence,
+  EvidenceType,
   ComplaintQueueItem,
   QueueStats as ComplaintQueueStats,
   ComplaintTimelineEvent as ComplaintTimeline,
