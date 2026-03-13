@@ -173,8 +173,8 @@ class ComplaintService {
       skip: filter.skip,
     });
     return {
-      tickets: res.data,
-      total: res.pagination?.total || res.data.length,
+      tickets: res.data ?? [],
+      total: res.pagination?.total || (res.data?.length ?? 0),
     };
   }
 
