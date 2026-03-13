@@ -215,7 +215,7 @@ export interface ModeratorWorkloadItem {
 
 export type ModeratorWorkloadResponse = {
   success: boolean;
-  data: ModeratorWorkloadItem[];
+  data?: ModeratorWorkloadItem[];
 };
 
 // ===== Requests =====
