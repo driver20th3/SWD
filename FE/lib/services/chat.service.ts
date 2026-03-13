@@ -348,7 +348,10 @@ class ChatService {
         if (Array.isArray(response.data)) {
           return {
             messages: response.data,
-            total: typeof response.total === "number" ? response.total : response.data.length,
+            total:
+              typeof response.data?.total === "number"
+                ? response.data.total
+                : response.data.length,
             hasMore: !!response.hasMore,
           };
         }
