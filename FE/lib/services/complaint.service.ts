@@ -123,6 +123,9 @@ class ComplaintService {
       content: data.content,
       evidence: data.evidence,
     });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
