@@ -352,7 +352,7 @@ class ChatService {
               typeof (response as { total?: number }).total === "number"
                 ? (response as { total?: number }).total!
                 : response.data.length,
-            hasMore: !!response.hasMore,
+            hasMore: !!(response as { hasMore?: boolean }).hasMore,
           };
         }
 
