@@ -600,7 +600,11 @@ export class OrderService extends BaseService<IOrder> {
 
       // Check for open complaints
       const openTicket = await InventoryItem.findOne({
-        _id: { $in: orderItems.map((item) => item.inventoryItemId) },
+        _id: {
+          $in: orderItems
+            .map((item) => item.inventoryItemId)
+            .filter((id): id is mongoose.Types.ObjectId => Boolean(id)),
+        },
       }).session(session);
 
       // Get customer wallet
@@ -670,7 +674,7 @@ export class OrderService extends BaseService<IOrder> {
       // Release inventory back to available
       const inventoryIds = orderItems
         .map((item) => item.inventoryItemId)
-        .filter(Boolean);
+        .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
 
       if (inventoryIds.length > 0) {
         await InventoryItem.updateMany(
@@ -837,7 +841,7 @@ export class OrderService extends BaseService<IOrder> {
       // Release inventory
       const inventoryIds = orderItems
         .map((item) => item.inventoryItemId)
-        .filter(Boolean);
+        .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
 
       if (inventoryIds.length > 0) {
         await InventoryItem.updateMany(

@@ -515,8 +515,8 @@ export class ReportService {
       },
     ]);
 
-    const createdMap = new Map(result[0].created.map((c: any) => [JSON.stringify(c._id), c.count]));
-    const resolvedMap = new Map(result[0].resolved.map((r: any) => [JSON.stringify(r._id), r.count]));
+    const createdMap = new Map<string, number>(result[0].created.map((c: any) => [JSON.stringify(c._id), c.count]));
+    const resolvedMap = new Map<string, number>(result[0].resolved.map((r: any) => [JSON.stringify(r._id), r.count]));
 
     const allDates = new Set<string>([...createdMap.keys(), ...resolvedMap.keys()]);
     const data = Array.from(allDates)
@@ -552,7 +552,7 @@ export class ReportService {
         $facet: {
           byResolution: [
             {
-              $match: { status: { $in: ["Resolved", "Closed"] } },
+              $match: { status: { $in: ["RESOLVED_REFUNDED", "APPEAL_CLOSED"] } },
             },
             {
               $group: {

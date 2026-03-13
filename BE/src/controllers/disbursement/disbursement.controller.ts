@@ -55,7 +55,7 @@ export class DisbursementController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { limit = 50, skip = 0, shopId, status } = req.query;
+      const { limit = 50, skip = 0, shopId } = req.query;
 
       // Build query
       const query: any = { holdStatus: "Holding" };
@@ -259,7 +259,7 @@ export class DisbursementController {
    * GET /api/admin/disbursement/stats
    */
   getDisbursementStats = async (
-    req: AuthRequest,
+    _req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {

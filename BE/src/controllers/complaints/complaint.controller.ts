@@ -237,7 +237,7 @@ export class ComplaintController {
    * GET /api/complaints/queue/stats
    */
   getQueueStats = async (
-    req: AuthRequest,
+    _req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -459,7 +459,7 @@ export class ComplaintController {
    * GET /api/complaints/moderator/workload
    */
   getModeratorWorkload = async (
-    req: AuthRequest,
+    _req: AuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {

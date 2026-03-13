@@ -91,7 +91,7 @@ export class TicketService extends BaseService<ISupportTicket> {
     // Check for existing open ticket for this order item
     const existingTicket = await SupportTicket.findOne({
       orderItemId,
-      status: { $nin: ["Resolved", "Closed"] },
+      status: { $nin: ["RESOLVED_REFUNDED", "APPEAL_CLOSED"] },
     });
 
     if (existingTicket) {
@@ -293,7 +293,7 @@ export class TicketService extends BaseService<ISupportTicket> {
 
     // Customer can only close their own ticket
     if (!isStaff) {
-      if (data.status && data.status !== "Closed") {
+      if (data.status && data.status !== "APPEAL_CLOSED") {
         throw new AppError("You can only close your ticket", 403);
       }
       if (data.assignedToUserId || data.resolutionType || data.priority) {
@@ -308,7 +308,7 @@ export class TicketService extends BaseService<ISupportTicket> {
       updateData.status = data.status;
 
       // Set decision info when resolving
-      if (data.status === "Resolved" && isStaff) {
+      if (data.status === "RESOLVED_REFUNDED" && isStaff) {
         updateData.decidedByUserId = new mongoose.Types.ObjectId(userId);
         updateData.decidedAt = new Date();
       }
@@ -336,16 +336,16 @@ export class TicketService extends BaseService<ISupportTicket> {
       if (conversation) {
         let message = "";
         switch (data.status) {
-          case "InReview":
+          case "MODERATOR_REVIEW":
             message = `Ticket đang được xem xét bởi nhân viên hỗ trợ.`;
             break;
-          case "NeedMoreInfo":
-            message = `Cần thêm thông tin từ khách hàng để xử lý ticket.`;
+          case "AUTO_ESCALATED":
+            message = `Ticket được tự động chuyển đến nhân viên hỗ trợ.`;
             break;
-          case "Resolved":
+          case "RESOLVED_REFUNDED":
             message = `Ticket đã được giải quyết. ${data.decisionNote || ""}`;
             break;
-          case "Closed":
+          case "APPEAL_CLOSED":
             message = `Ticket đã được đóng.`;
             break;
         }
@@ -375,7 +375,7 @@ export class TicketService extends BaseService<ISupportTicket> {
       ticketId,
       {
         assignedToUserId: staffUserId,
-        status: "InReview",
+        status: "MODERATOR_REVIEW",
       },
       { new: true }
     );
@@ -469,7 +469,7 @@ export class TicketService extends BaseService<ISupportTicket> {
         {
           $match: {
             ...filter,
-            status: "Resolved",
+            status: "RESOLVED_REFUNDED",
             decidedAt: { $exists: true },
           },
         },

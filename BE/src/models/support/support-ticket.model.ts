@@ -7,7 +7,6 @@ import {
   ComplaintCategory,
   ComplaintSubcategory,
   EscalationLevel,
-  PenaltyType,
   IComplaintEvidence,
   IInternalNote,
   ISellerPenalty,
