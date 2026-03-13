@@ -1,0 +1,147 @@
+# Dependencies - CRITICAL: Must ignore all node_modules
+# Use absolute patterns from root
+/node_modules
+/BE/node_modules
+/FE/node_modules
+BE/node_modules
+FE/node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+**/dist/**
+BE/dist
+BE/dist/**
+build
+**/build
+**/build/**
+.next
+**/.next
+**/.next/**
+FE/.next
+FE/.next/**
+out
+**/out
+**/out/**
+
+# Environment files
+.env
+.env.*
+**/.env
+**/.env.*
+**/.env.local
+**/.env.*.local
+env.example
+**/env.example
+
+# Logs
+*.log
+**/*.log
+**/yarn-error.log
+**/npm-debug.log*
+**/pnpm-debug.log*
+logs
+**/logs
+
+# IDE and Editor files
+.vscode
+**/.vscode
+**/.vscode/**
+.idea
+**/.idea
+**/.idea/**
+*.swp
+*.swo
+*~
+.DS_Store
+**/.DS_Store
+Thumbs.db
+**/Thumbs.db
+
+# Testing
+__tests__
+**/__tests__
+**/__tests__/**
+__mocks__
+**/__mocks__
+**/__mocks__/**
+*.test.ts
+*.test.tsx
+*.test.js
+*.test.jsx
+**/*.test.*
+*.spec.ts
+*.spec.tsx
+*.spec.js
+*.spec.jsx
+**/*.spec.*
+coverage
+**/coverage
+**/coverage/**
+.nyc_output
+**/.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+**/*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Lock files
+yarn.lock
+**/yarn.lock
+package-lock.json
+**/package-lock.json
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+
+# Source maps - reduce upload size
+*.map
+**/*.map
+**/*.js.map
+**/*.d.ts.map
+
+# Documentation
+README.md
+**/README.md
+**/*.md
+docs
+**/docs
+**/docs/**
+
+# Git
+.git
+**/.git
+**/.git/**
+
+# Vercel
+.vercel
+**/.vercel
+**/.vercel/**
+
+# Temporary files
+tmp
+**/tmp
+**/tmp/**
+temp
+**/temp
+**/temp/**
+*.tmp
+**/*.tmp
+
+# Cache
+.cache
+**/.cache
+**/.cache/**
+.parcel-cache
+**/.parcel-cache
+.eslintcache
+**/.eslintcache
+
+# Public assets that might be large (if not needed)
+**/public/images
+**/public/videos
+
+# Only ignore generated type definitions in dist/build folders
+**/dist/**/*.d.ts
+**/build/**/*.d.ts

@@ -1,0 +1,69 @@
+name: Deploy to Vercel
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+jobs:
+  deploy_preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Remove unnecessary files to reduce file count
+        run: |
+          echo "Removing unnecessary files to reduce file count..."
+          rm -rf BE/node_modules FE/node_modules
+          rm -rf BE/dist FE/.next FE/out
+          rm -rf .git
+          find . -name "*.map" -type f -delete || true
+          find . -name "*.log" -type f -delete || true
+          find . -name ".DS_Store" -type f -delete || true
+          find . -name "Thumbs.db" -type f -delete || true
+          echo "Unnecessary files removed"
+
+      - name: Pull preview env
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy preview
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz
+
+  deploy_production:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Remove unnecessary files to reduce file count
+        run: |
+          echo "Removing unnecessary files to reduce file count..."
+          rm -rf BE/node_modules FE/node_modules
+          rm -rf BE/dist FE/.next FE/out
+          rm -rf .git
+          find . -name "*.map" -type f -delete || true
+          find . -name "*.log" -type f -delete || true
+          find . -name ".DS_Store" -type f -delete || true
+          find . -name "Thumbs.db" -type f -delete || true
+          echo "Unnecessary files removed"
+
+      - name: Pull production env
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build production
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz
