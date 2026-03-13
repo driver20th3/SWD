@@ -349,8 +349,8 @@ class ChatService {
           return {
             messages: response.data,
             total:
-              typeof response.data?.total === "number"
-                ? response.data.total
+              typeof (response as { total?: number }).total === "number"
+                ? (response as { total?: number }).total!
                 : response.data.length,
             hasMore: !!response.hasMore,
           };
