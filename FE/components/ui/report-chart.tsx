@@ -48,8 +48,12 @@ export function ReportChart({ data, title, lines }: ReportChartProps) {
               <XAxis dataKey="formattedDate" />
               <YAxis tickFormatter={(value) => new Intl.NumberFormat('vi-VN').format(value)} />
               <Tooltip 
-                formatter={(value: number) => new Intl.NumberFormat('vi-VN').format(value)}
-                labelStyle={{ color: 'black' }}
+                formatter={(value) =>
+                  typeof value === "number"
+                    ? new Intl.NumberFormat("vi-VN").format(value)
+                    : value ?? ""
+                }
+                labelStyle={{ color: "black" }}
               />
               <Legend />
               {lines.map((line) => (
