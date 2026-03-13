@@ -41,7 +41,14 @@ export type ComplaintStatus =
   | "AppealFiled"
   | "AppealReview"
   | "Resolved"
-  | "Closed";
+  | "Closed"
+  | "PENDING_SELLER"
+  | "SELLER_APPROVED"
+  | "SELLER_REJECTED"
+  | "AUTO_ESCALATED"
+  | "MODERATOR_REVIEW"
+  | "RESOLVED_REFUNDED"
+  | "CLOSED_REJECTED";
 
 export type EscalationLevel = "Level2_Moderator" | "Level3_SeniorMod" | "Level4_Admin";
 
