@@ -141,6 +141,9 @@ class ComplaintService {
     }
     // Taking the first one as per swagger single-object definition
     const res = await complaintsApi.addEvidence(complaintId, data.evidence[0]);
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
