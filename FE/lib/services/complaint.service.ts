@@ -156,6 +156,9 @@ class ComplaintService {
       reason: data.reason,
       additionalEvidence: data.evidence,
     });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
