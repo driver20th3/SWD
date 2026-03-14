@@ -271,6 +271,9 @@ class ComplaintService {
    */
   async addInternalNote(complaintId: string, content: string): Promise<T.Complaint> {
     const res = await complaintsApi.addInternalNote(complaintId, { content });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
@@ -282,6 +285,9 @@ class ComplaintService {
     data: RequestInfoRequest
   ): Promise<T.Complaint> {
     const res = await complaintsApi.requestInfo(complaintId, data);
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
@@ -297,6 +303,9 @@ class ComplaintService {
       decisionNote: data.reason,
       refundAmount: data.refundAmount,
     });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
@@ -305,7 +314,7 @@ class ComplaintService {
    */
   async getModeratorWorkload(): Promise<T.ModeratorWorkloadItem[]> {
     const res = await complaintsApi.getModeratorWorkload();
-    return res.data;
+    return res.data ?? [];
   }
 
   // ===== Admin Endpoints =====
@@ -321,6 +330,9 @@ class ComplaintService {
       decision: data.decision,
       reason: data.note || "No reason provided",
     });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
@@ -331,6 +343,9 @@ class ComplaintService {
    */
   async getComplaintById(complaintId: string): Promise<T.Complaint> {
     const res = await complaintsApi.getById(complaintId);
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
@@ -339,7 +354,7 @@ class ComplaintService {
    */
   async getComplaintTimeline(complaintId: string): Promise<T.ComplaintTimelineEvent[]> {
     const res = await complaintsApi.getTimeline(complaintId);
-    return res.data;
+    return res.data ?? [];
   }
 
   /**
@@ -353,8 +368,8 @@ class ComplaintService {
       skip: filter.skip,
     });
     return {
-      tickets: res.data,
-      total: res.pagination?.total || res.data.length,
+      tickets: res.data ?? [],
+      total: res.pagination?.total || (res.data?.length ?? 0),
     };
   }
 }
