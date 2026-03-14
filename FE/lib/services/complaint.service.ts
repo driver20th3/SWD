@@ -260,6 +260,9 @@ class ComplaintService {
     moderatorId?: string
   ): Promise<T.Complaint> {
     const res = await complaintsApi.assign(complaintId, { moderatorId });
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
