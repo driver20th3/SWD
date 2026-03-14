@@ -234,8 +234,8 @@ class ComplaintService {
       skip: filter.skip,
     });
     return {
-      items: res.data,
-      total: res.pagination?.total || res.data.length,
+      items: res.data ?? [],
+      total: res.pagination?.total || (res.data?.length ?? 0),
     };
   }
 
