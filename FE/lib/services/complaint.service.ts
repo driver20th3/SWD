@@ -245,6 +245,9 @@ class ComplaintService {
    */
   async getQueueStats(): Promise<T.QueueStats> {
     const res = await complaintsApi.getQueueStats();
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
