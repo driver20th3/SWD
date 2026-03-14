@@ -198,6 +198,9 @@ class ComplaintService {
    */
   async sellerDecision(complaintId: string, data: SellerDecisionRequest): Promise<T.Complaint> {
     const res = await complaintsApi.sellerDecision(complaintId, data);
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return res.data;
   }
 
