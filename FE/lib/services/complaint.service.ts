@@ -210,6 +210,9 @@ class ComplaintService {
    */
   async checkCanFileComplaint(orderItemId: string): Promise<CanFileComplaintResponse> {
     const res = await complaintsApi.checkCanFile(orderItemId);
+    if (!res.data) {
+      throw new Error("Empty response data");
+    }
     return {
       canFile: res.data.canFile,
       reason: res.data.reason || undefined,
