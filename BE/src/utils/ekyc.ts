@@ -17,8 +17,9 @@ export const decideKyc = (params: {
 }): { decision: KycDecision; prob: number | null; msg: string } => {
   const reasons: string[] = [];
 
+  // Ignore card liveness for demo mode
   const cardOk = isVnptSuccess(params.cardLivenessRaw);
-  if (!cardOk) reasons.push("CARD_LIVENESS_FAILED");
+  void cardOk;
 
   const faceOk = isVnptSuccess(params.faceLivenessRaw);
   if (!faceOk) reasons.push("FACE_LIVENESS_FAILED");
