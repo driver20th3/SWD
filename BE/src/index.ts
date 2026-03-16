@@ -18,6 +18,9 @@ import { PermissionService } from "@/services/auth/permission.service";
 
 const app = express();
 
+// Trust proxy for Render/production (needed for rate limiter + X-Forwarded-For)
+app.set("trust proxy", 1);
+
 const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME;
 const isProduction = env.nodeEnv === "production";
 
