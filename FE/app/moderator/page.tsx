@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -9,486 +9,299 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Shield,
-  Package,
-  MessageSquare,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Eye,
-  Ban,
-  FileText,
-  TrendingUp,
-  Clock,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Eye, Inbox, CheckCircle, RefreshCw, AlertTriangle, Timer } from "lucide-react";
+import { complaintService } from "@/lib/services/complaint.service";
+import type { ComplaintQueueItem, ComplaintQueueStats, Complaint } from "@/lib/services/complaint.service";
+import { toast } from "sonner";
 
-// Types for backend data
-interface ModeratorStats {
-  pendingProducts: number;
-  approvedToday: number;
-  rejectedToday: number;
-  pendingReports: number;
-  pendingReviews: number;
-  pendingComments: number;
-  suspendedShops: number;
-  restrictedUsers: number;
-}
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  InQueue: { label: "Trong hàng đợi", variant: "secondary" },
+  Assigned: { label: "Đã giao", variant: "default" },
+  InProgress: { label: "Đang xử lý", variant: "default" },
+  Completed: { label: "Hoàn thành", variant: "outline" },
+};
 
-interface Report {
-  id: string;
-  type: string;
-  reason: string;
-  target: string;
-  reporter: string;
-  date: string;
-  status: "open" | "in_review" | "resolved";
-}
+const categoryLabels: Record<string, string> = {
+  ProductQuality: "Chất lượng SP",
+  NotAsDescribed: "Không đúng mô tả",
+  AccountNotWorking: "TK không hoạt động",
+  DeliveryIssue: "Vấn đề giao hàng",
+  Fraud: "Lừa đảo",
+  Other: "Khác",
+};
 
 export default function ModeratorDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<ModeratorStats>({
-    pendingProducts: 0,
-    approvedToday: 0,
-    rejectedToday: 0,
-    pendingReports: 0,
-    pendingReviews: 0,
-    pendingComments: 0,
-    suspendedShops: 0,
-    restrictedUsers: 0,
-  });
-  const [reports, setReports] = useState<Report[]>([]);
+  const [queueItems, setQueueItems] = useState<ComplaintQueueItem[]>([]);
+  const [stats, setStats] = useState<ComplaintQueueStats | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("Assigned");
+  const [sortOption, setSortOption] = useState<string>("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
+
+  const formatPrice = (price: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+  const formatTime = (minutes: number) => {
+    if (minutes < 60) return `${Math.round(minutes)} phút`;
+    if (minutes < 1440) return `${Math.round(minutes / 60)} giờ`;
+    return `${Math.round(minutes / 1440)} ngày`;
+  };
+
+  const fetchQueue = async () => {
+    setIsLoading(true);
+    try {
+      const sortConfig: Record<string, { sortBy: string; sortOrder: "asc" | "desc" }> = {
+        newest: { sortBy: "addedToQueueAt", sortOrder: "desc" },
+        oldest: { sortBy: "addedToQueueAt", sortOrder: "asc" },
+        priority: { sortBy: "queuePriority", sortOrder: "desc" },
+      };
+      const { sortBy, sortOrder } = sortConfig[sortOption] || sortConfig.newest;
+
+      const [queueResult, statsResult] = await Promise.all([
+        complaintService.getQueue({
+          status: statusFilter !== "all" ? (statusFilter as any) : undefined,
+          sortBy,
+          sortOrder,
+          limit: itemsPerPage,
+          skip: (currentPage - 1) * itemsPerPage,
+        }),
+        complaintService.getQueueStats(),
+      ]);
+
+      setQueueItems(queueResult.items || []);
+      setTotalItems(queueResult.total || 0);
+      setStats(statsResult);
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể tải hàng đợi khiếu nại");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // TODO: Fetch from backend
-        // const [statsRes, reportsRes] = await Promise.all([
-        //   moderatorService.getStats(),
-        //   moderatorService.getPendingReports(),
-        // ]);
-        // setStats(statsRes);
-        // setReports(reportsRes);
-      } catch (error) {
-        console.error("Failed to fetch moderator data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    fetchQueue();
+  }, [statusFilter, sortOption, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, sortOption]);
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Dashboard Kiểm duyệt
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Quản lý kiểm duyệt nội dung và xử lý báo cáo
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/moderator/review">
-                <Package className="mr-2 h-4 w-4" />
-                Duyệt sản phẩm
-              </Link>
-            </Button>
-          </div>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header with Filters */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Xử lý khiếu nại</h1>
+          <p className="text-sm text-muted-foreground">Quản lý và xử lý khiếu nại sử dụng dữ liệu thực từ API</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="py-4">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Sản phẩm chờ duyệt
-              </CardTitle>
-              <Clock className="h-5 w-5 text-orange-500" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {stats.pendingProducts}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    <Link
-                      href="/moderator/review"
-                      className="text-primary hover:underline"
-                    >
-                      Xem hàng đợi
-                    </Link>
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+        {/* Compact Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Trạng thái:</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="Assigned">Đã gán</SelectItem>
+                <SelectItem value="InProgress">Đang xử lý</SelectItem>
+                <SelectItem value="Completed">Hoàn thành</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Card className="py-4">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Đã duyệt hôm nay
-              </CardTitle>
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-green-600">
-                    {stats.approvedToday}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Sản phẩm đã phê duyệt
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Sắp xếp:</span>
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Mới nhất</SelectItem>
+                <SelectItem value="oldest">Cũ nhất</SelectItem>
+                <SelectItem value="priority">Ưu tiên cao</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Card className="py-4">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Báo cáo chờ xử lý
-              </CardTitle>
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-red-600">
-                    {stats.pendingReports}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Cần xem xét
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="py-4">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Đánh giá chờ duyệt
-              </CardTitle>
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">
-                    {stats.pendingReviews}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Review cần kiểm tra
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Button variant="outline" size="sm" onClick={fetchQueue} className="h-9">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Làm mới
+          </Button>
         </div>
+      </div>
 
-        {/* Quick Actions */}
+      {/* Stats Cards */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="py-4">
-          <CardHeader className="px-4 pt-4 pb-3">
-            <CardTitle className="text-base">Thao tác nhanh</CardTitle>
-            <CardDescription className="text-xs">Các chức năng kiểm duyệt</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
+            <CardTitle className="text-sm font-medium">Đã gán</CardTitle>
+            <Inbox className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-              <Button variant="outline" className="h-auto py-3 flex-col gap-1.5" asChild>
-                <Link href="/moderator/complaints">
-                  <FileText className="h-4 w-4" />
-                  <span className="text-xs">Xử lý khiếu nại</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-3 flex-col gap-1.5" asChild>
-                <Link href="/moderator/review">
-                  <Package className="h-4 w-4" />
-                  <span className="text-xs">Duyệt sản phẩm</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-3 flex-col gap-1.5" asChild>
-                <Link href="/moderator/reports">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-xs">Xử lý báo cáo</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-3 flex-col gap-1.5" asChild>
-                <Link href="/moderator/reviews">
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="text-xs">Kiểm duyệt review</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-3 flex-col gap-1.5" asChild>
-                <Link href="/moderator/shops">
-                  <Shield className="h-4 w-4" />
-                  <span className="text-xs">Quản lý shop</span>
-                </Link>
-              </Button>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats?.totalAssigned || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Đang chờ xử lý
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Tabs Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-9">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">Tổng quan</TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs sm:text-sm">Báo cáo</TabsTrigger>
-            <TabsTrigger value="reviews" className="text-xs sm:text-sm">Đánh giá</TabsTrigger>
-            <TabsTrigger value="actions" className="text-xs sm:text-sm">Hành động</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            {/* Pending Reports */}
-            <Card className="py-4">
-              <CardHeader className="px-4 pt-4 pb-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base">Báo cáo gần đây</CardTitle>
-                    <CardDescription className="text-xs">
-                      {stats.pendingReports} báo cáo cần xử lý
-                    </CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/moderator/reports">Xem tất cả</Link>
-                  </Button>
+        <Card className="py-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
+            <CardTitle className="text-sm font-medium">Đang xử lý</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {stats?.totalInProgress || 0}
                 </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                  </div>
-                ) : reports.length === 0 ? (
-                  <div className="text-center py-8">
-                    <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Không có báo cáo nào cần xử lý.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {reports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{report.target}</p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{report.type}</Badge>
-                            <Badge variant="destructive" className="text-xs">{report.reason}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {report.id}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {report.date}
-                            </span>
-                            <Badge
-                              variant={
-                                report.status === "open"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="text-xs"
-                            >
-                              {report.status === "open"
-                                ? "Mở"
-                                : "Đang xem xét"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-                            <Link href={`/moderator/reports/${report.id}`}>
-                              <Eye className="mr-1.5 h-3.5 w-3.5" />
-                              Xem chi tiết
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Moderator đang làm
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Today's Activity */}
-            <Card className="py-4">
-              <CardHeader className="px-4 pt-4 pb-3">
-                <CardTitle className="text-base">Hoạt động hôm nay</CardTitle>
-                <CardDescription className="text-xs">Thống kê công việc đã thực hiện</CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {isLoading ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <Skeleton key={i} className="h-24 w-full" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1.5" />
-                      <p className="text-xl font-bold text-green-600">
-                        {stats.approvedToday}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Đã duyệt</p>
-                    </div>
-                    <div className="text-center p-3 bg-red-50 rounded-lg">
-                      <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1.5" />
-                      <p className="text-xl font-bold text-red-600">
-                        {stats.rejectedToday}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Đã từ chối</p>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <FileText className="h-6 w-6 text-blue-600 mx-auto mb-1.5" />
-                      <p className="text-xl font-bold text-blue-600">
-                        {stats.pendingReports}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Báo cáo xử lý</p>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <Ban className="h-6 w-6 text-orange-600 mx-auto mb-1.5" />
-                      <p className="text-xl font-bold text-orange-600">
-                        {stats.suspendedShops}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Shop đã khóa</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+        <Card className="py-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
+            <CardTitle className="text-sm font-medium">Hoàn thành hôm nay</CardTitle>
+            <CheckCircle className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats?.totalCompletedToday || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Đã xử lý
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Reports Tab */}
-          <TabsContent value="reports">
-            <Card className="py-4">
-              <CardHeader className="px-4 pt-4 pb-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base">Tất cả báo cáo</CardTitle>
-                    <CardDescription className="text-xs">Quản lý và xử lý báo cáo</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/moderator/reports">Xem tất cả</Link>
-                  </Button>
+        <Card className="py-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-4 pt-4">
+            <CardTitle className="text-sm font-medium">Trong hàng đợi</CardTitle>
+            <Timer className="h-5 w-5 text-orange-500" />
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats?.totalInQueue || 0}
                 </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                  </div>
-                ) : reports.length === 0 ? (
-                  <div className="text-center py-8">
-                    <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Không có báo cáo nào.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {reports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{report.target}</p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{report.type}</Badge>
-                            <Badge variant="destructive" className="text-xs">{report.reason}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {report.id}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-                            <Link href={`/moderator/reports/${report.id}`}>
-                              Xem chi tiết
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Reviews Tab */}
-          <TabsContent value="reviews">
-            <Card className="py-4">
-              <CardHeader className="px-4 pt-4 pb-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base">Kiểm duyệt đánh giá</CardTitle>
-                    <CardDescription className="text-xs">
-                      {stats.pendingReviews} đánh giá cần kiểm tra
-                    </CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/moderator/reviews">Xem tất cả</Link>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="text-center py-8">
-                  <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Không có đánh giá nào cần kiểm duyệt.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Actions Tab */}
-          <TabsContent value="actions">
-            <Card className="py-4">
-              <CardHeader className="px-4 pt-4 pb-3">
-                <CardTitle className="text-base">Hành động gần đây</CardTitle>
-                <CardDescription className="text-xs">Lịch sử các hành động kiểm duyệt</CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="text-center py-8">
-                  <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Chưa có hành động nào được ghi nhận.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Chờ moderator
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Queue List */}
+      <Card className="py-4">
+        <CardHeader className="px-4 pt-4 pb-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-base">Danh sách khiếu nại</CardTitle>
+              <CardDescription className="text-xs">Hiển thị {queueItems.length} / {totalItems} khiếu nại</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          ) : queueItems.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Hàng đợi trống</h3>
+              <p className="text-sm text-muted-foreground">Không có khiếu nại nào cần xử lý</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {queueItems.map((item) => {
+                const ticket = typeof item.ticketId === "object" ? (item.ticketId as Complaint) : null;
+                const status = statusConfig[item.status] || { label: item.status, variant: "outline" as const };
+
+                return (
+                  <div key={item._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{ticket?.ticketCode || "N/A"}</span>
+                        <Badge variant={status.variant} className="text-xs">{status.label}</Badge>
+                        {item.isHighValue && <Badge variant="destructive" className="text-xs">Giá trị cao</Badge>}
+                        {item.isEscalated && <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">Leo thang</Badge>}
+                      </div>
+
+                      <p className="text-sm truncate">{ticket?.title || "Không có tiêu đề"}</p>
+
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                        {ticket?.category && <span className="bg-muted px-2 py-0.5 rounded">{categoryLabels[ticket.category] || ticket.category}</span>}
+                        <span>Giá trị: {formatPrice(item.orderValue)}</span>
+                        <span>Chờ: {formatTime(item.ticketAge * 60)}</span>
+                        <span>Ưu tiên: {item.queuePriority.toFixed(0)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
+                        <Link href={`/moderator/complaints/${typeof item.ticketId === "string" ? item.ticketId : (item.ticketId as Complaint)._id}`}>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" />
+                          Xem chi tiết
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t mt-4">
+                  <p className="text-sm text-muted-foreground">Trang {currentPage} / {totalPages}</p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>Trước</Button>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Sau</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

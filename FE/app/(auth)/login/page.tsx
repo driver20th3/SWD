@@ -34,7 +34,7 @@ const getDashboardByRole = (role?: string) => {
     case "admin":
       return "/admin";
     case "moderator":
-      return "/moderator";
+      return "/moderator/complaints";
     case "seller":
       return "/seller";
     case "customer":

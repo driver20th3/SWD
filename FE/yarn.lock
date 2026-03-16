@@ -901,6 +901,11 @@
     redux-thunk "^3.1.0"
     reselect "^5.1.0"
 
+"@rolldown/binding-win32-x64-msvc@1.0.0-beta.59":
+  version "1.0.0-beta.59"
+  resolved "https://registry.npmjs.org/@rolldown/binding-win32-x64-msvc/-/binding-win32-x64-msvc-1.0.0-beta.59.tgz"
+  integrity sha512-bMY4tTIwbdZljW+xe/ln1hvs0SRitahQSXfWtvgAtIzgSX9Ar7KqJzU7lRm33YTRFIHLULRi53yNjw9nJGd6uQ==
+
 "@rolldown/pluginutils@1.0.0-beta.59":
   version "1.0.0-beta.59"
   resolved "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.59.tgz"

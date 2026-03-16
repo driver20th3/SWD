@@ -288,15 +288,9 @@ export function Header() {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href="/moderator/shops" className="flex items-center">
-                          <Store className="mr-2 h-4 w-4" />
-                          <span>Quản lý Shop</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/moderator/review" className="flex items-center">
-                          <Shield className="mr-2 h-4 w-4" />
-                          <span>Kiểm duyệt sản phẩm</span>
+                        <Link href="/moderator/complaints" className="flex items-center">
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Xử lý khiếu nại</span>
                         </Link>
                       </DropdownMenuItem>
                     </>

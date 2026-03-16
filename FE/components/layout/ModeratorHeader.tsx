@@ -42,12 +42,7 @@ export function ModeratorHeader() {
   };
 
   const navItems = [
-    { href: "/moderator", label: "Dashboard", icon: Home },
-    { href: "/moderator/review", label: "Duyệt sản phẩm", icon: Package },
-    { href: "/moderator/reports", label: "Xử lý báo cáo", icon: AlertTriangle },
-    { href: "/moderator/reviews", label: "Kiểm duyệt review", icon: MessageSquare },
-    { href: "/moderator/comments", label: "Kiểm duyệt comment", icon: FileText },
-    { href: "/moderator/shops", label: "Quản lý shop", icon: Store },
+    { href: "/moderator/complaints", label: "Xử lý khiếu nại", icon: FileText },
   ];
 
   const isActive = (href: string) => {
@@ -64,7 +59,7 @@ export function ModeratorHeader() {
           {/* Logo & Brand */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             <Link
-              href="/moderator"
+              href="/moderator/complaints"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -135,21 +130,9 @@ export function ModeratorHeader() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="text-sm">
-                    <Link href="/moderator">
-                      <Home className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="text-sm">
-                    <Link href="/moderator/review">
-                      <Package className="mr-2 h-4 w-4" />
-                      <span>Duyệt sản phẩm</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="text-sm">
-                    <Link href="/products">
-                      <Store className="mr-2 h-4 w-4" />
-                      <span>Về trang chủ</span>
+                    <Link href="/moderator/complaints">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Xử lý khiếu nại</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
