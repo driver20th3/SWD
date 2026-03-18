@@ -27,6 +27,21 @@ export const uploadService = {
   },
 
   /**
+   * Upload product image (for sellers - requires PRODUCT_CREATE permission)
+   */
+  async uploadProductImage(file: File): Promise<UploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await apiClient.post<UploadResponse>("/uploads/image", formData);
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.message || "Upload failed");
+  },
+
+  /**
    * Upload multiple files
    */
   async uploadFiles(files: File[]): Promise<UploadResponse[]> {

@@ -18,15 +18,11 @@ import { authService } from "@/lib/services/auth.service";
 import {
   LogOut,
   Shield,
-  Package,
-  MessageSquare,
-  AlertTriangle,
   Store,
   Menu,
   X,
   Home,
   FileText,
-  Ban,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -43,10 +39,7 @@ export function ModeratorHeader() {
 
   const navItems = [
     { href: "/moderator", label: "Dashboard", icon: Home },
-    { href: "/moderator/review", label: "Duyệt sản phẩm", icon: Package },
-    { href: "/moderator/reports", label: "Xử lý báo cáo", icon: AlertTriangle },
-    { href: "/moderator/reviews", label: "Kiểm duyệt review", icon: MessageSquare },
-    { href: "/moderator/comments", label: "Kiểm duyệt comment", icon: FileText },
+    { href: "/moderator/complaints", label: "Xử lý khiếu nại", icon: FileText },
     { href: "/moderator/shops", label: "Quản lý shop", icon: Store },
   ];
 
@@ -141,15 +134,15 @@ export function ModeratorHeader() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="text-sm">
-                    <Link href="/moderator/review">
-                      <Package className="mr-2 h-4 w-4" />
-                      <span>Duyệt sản phẩm</span>
+                    <Link href="/moderator/complaints">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Xử lý khiếu nại</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="text-sm">
-                    <Link href="/products">
+                    <Link href="/moderator/shops">
                       <Store className="mr-2 h-4 w-4" />
-                      <span>Về trang chủ</span>
+                      <span>Quản lý shop</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

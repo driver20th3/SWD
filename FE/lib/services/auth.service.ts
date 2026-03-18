@@ -259,10 +259,60 @@ class AuthService {
       token,
       newPassword,
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "Password reset failed");
     }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(data: {
+    fullName?: string;
+    phone?: string | null;
+    avatarUrl?: string | null;
+  }): Promise<UserResponse> {
+    const response = await apiClient.put<UserResponse>("/users/profile", data);
+
+    if (response.success && response.data) {
+      // Update auth store with new profile data
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({
+          ...currentUser,
+          name: response.data.fullName,
+          phone: response.data.phone,
+          avatar: response.data.avatarUrl,
+        });
+      }
+      return response.data;
+    }
+
+    throw new Error(response.message || "Profile update failed");
+  }
+
+  /**
+   * Get customer profile stats
+   */
+  async getCustomerStats(): Promise<{
+    totalOrders: number;
+    pendingOrders: number;
+    walletBalance: number;
+    supportTickets: number;
+  }> {
+    const response = await apiClient.get<{
+      totalOrders: number;
+      pendingOrders: number;
+      walletBalance: number;
+      supportTickets: number;
+    }>("/users/profile/stats");
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+
+    throw new Error(response.message || "Failed to get customer stats");
   }
 
   /**
