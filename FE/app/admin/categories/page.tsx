@@ -32,6 +32,7 @@ import {
   type PlatformCatalog,
   type PlatformCatalogStatus,
 } from "@/lib/services/platform-catalog.service";
+import { uploadService } from "@/lib/services/upload.service";
 import { Edit, Loader2, Package, Plus, Trash2 } from "lucide-react";
 
 const EMPTY_FORM = {
@@ -44,6 +45,7 @@ export default function AdminCategoriesPage() {
   const [items, setItems] = useState<PlatformCatalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -67,6 +69,19 @@ export default function AdminCategoriesPage() {
   }, []);
 
   const resetForm = () => setForm(EMPTY_FORM);
+
+  const handleLogoUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const uploaded = await uploadService.uploadFile(file);
+      setForm((prev) => ({ ...prev, logoUrl: uploaded.url }));
+      toast.success("Tải ảnh logo thành công");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tải ảnh thất bại");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!form.platformName.trim()) {
@@ -212,11 +227,30 @@ export default function AdminCategoriesPage() {
               value={form.platformName}
               onChange={(e) => setForm((prev) => ({ ...prev, platformName: e.target.value }))}
             />
-            <Input
-              placeholder="Logo URL (optional)"
-              value={form.logoUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
-            />
+            <div className="space-y-2">
+              <Input
+                placeholder="Logo URL (optional)"
+                value={form.logoUrl}
+                onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
+              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      void handleLogoUpload(file);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" disabled={uploading}>
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Chọn ảnh
+                </Button>
+              </div>
+            </div>
             <Select
               value={form.status}
               onValueChange={(v: PlatformCatalogStatus) => setForm((prev) => ({ ...prev, status: v }))}
@@ -254,11 +288,30 @@ export default function AdminCategoriesPage() {
               value={form.platformName}
               onChange={(e) => setForm((prev) => ({ ...prev, platformName: e.target.value }))}
             />
-            <Input
-              placeholder="Logo URL (optional)"
-              value={form.logoUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
-            />
+            <div className="space-y-2">
+              <Input
+                placeholder="Logo URL (optional)"
+                value={form.logoUrl}
+                onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
+              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      void handleLogoUpload(file);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" disabled={uploading}>
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Chọn ảnh
+                </Button>
+              </div>
+            </div>
             <Select
               value={form.status}
               onValueChange={(v: PlatformCatalogStatus) => setForm((prev) => ({ ...prev, status: v }))}
