@@ -764,6 +764,30 @@ export class ComplaintService {
       { status: "Completed", completedAt: new Date() }
     );
 
+    // If complaint is rejected, revert Order/OrderItem status to allow normal disbursement
+    if (input.resolutionType === "Reject") {
+      const order = await Order.findById((orderItem.orderId as any)?._id || orderItem.orderId);
+
+      // Update OrderItem back to Delivered status
+      await OrderItem.findByIdAndUpdate(orderItem._id, {
+        itemStatus: "Delivered",
+      });
+
+      // Check if there are other disputed items in the same order
+      const otherDisputedItems = await OrderItem.countDocuments({
+        orderId: order?._id,
+        _id: { $ne: orderItem._id },
+        itemStatus: "Disputed",
+      });
+
+      // If no other disputed items, revert Order status to Paid
+      if (otherDisputedItems === 0 && order) {
+        await Order.findByIdAndUpdate(order._id, {
+          status: "Paid",
+        });
+      }
+    }
+
     await this.addTimelineEvent(
       ticketId,
       "DecisionMade",
@@ -827,6 +851,31 @@ export class ComplaintService {
       await SupportTicket.findByIdAndUpdate(originalTicket._id, {
         status: input.decision === "Upheld" ? "CLOSED_REJECTED" : "RESOLVED_REFUNDED",
       });
+
+      // If appeal is upheld (rejection confirmed), revert Order/OrderItem status
+      if (input.decision === "Upheld") {
+        const orderItem = await OrderItem.findById(originalTicket.orderItemId);
+        if (orderItem) {
+          // Update OrderItem back to Delivered status
+          await OrderItem.findByIdAndUpdate(orderItem._id, {
+            itemStatus: "Delivered",
+          });
+
+          // Check if there are other disputed items in the same order
+          const otherDisputedItems = await OrderItem.countDocuments({
+            orderId: orderItem.orderId,
+            _id: { $ne: orderItem._id },
+            itemStatus: "Disputed",
+          });
+
+          // If no other disputed items, revert Order status to Paid
+          if (otherDisputedItems === 0) {
+            await Order.findByIdAndUpdate(orderItem.orderId, {
+              status: "Paid",
+            });
+          }
+        }
+      }
     }
 
     await this.addTimelineEvent(

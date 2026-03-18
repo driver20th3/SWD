@@ -9,6 +9,7 @@ export class PermissionService {
   /**
    * Assign default permissions to roles
    * Should be called after roles are created
+   * Optimized to only update if permissions are different
    */
   static async assignDefaultPermissions(): Promise<void> {
     try {
@@ -18,9 +19,20 @@ export class PermissionService {
           continue;
         }
 
-        // Update role with permissions (spread readonly array to mutable array)
-        role.permissions = [...permissionKeys];
-        await role.save();
+        // Check if permissions are already correct (same length and same values)
+        const currentPermissions = new Set(role.permissions || []);
+        const expectedPermissions = new Set(permissionKeys);
+
+        const isDifferent =
+          currentPermissions.size !== expectedPermissions.size ||
+          [...expectedPermissions].some(p => !currentPermissions.has(p));
+
+        // Only update if permissions are different
+        if (isDifferent) {
+          role.permissions = [...permissionKeys];
+          await role.save();
+          console.log(`Updated permissions for role: ${roleKey}`);
+        }
       }
     } catch (error) {
       throw error;

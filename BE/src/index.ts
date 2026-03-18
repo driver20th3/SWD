@@ -31,14 +31,12 @@ const ensureDbConnection = async () => {
     await connectDB();
     dbConnected = true;
 
-    // Sync permissions only once (skip on serverless cold starts for speed)
-    if (!isServerless) {
-      try {
-        await PermissionService.assignDefaultPermissions();
-        console.log("Permissions synced successfully");
-      } catch (error) {
-        console.error("Failed to sync permissions:", error);
-      }
+    // Sync permissions on startup (always - needed for role permissions to work)
+    try {
+      await PermissionService.assignDefaultPermissions();
+      console.log("Permissions synced successfully");
+    } catch (error) {
+      console.error("Failed to sync permissions:", error);
     }
   }
 };

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  createProductSchema,
-  type CreateProductInput,
+  updateProductSchema,
+  type UpdateProductInput,
 } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,27 +40,31 @@ import { type ApiError } from "@/lib/api";
 import { useShop } from "@/lib/hooks/useShop";
 import { Skeleton } from "@/components/ui/skeleton";
 import { platformCatalogService, type PlatformCatalog } from "@/lib/services/platform-catalog.service";
-import { X, ImageIcon } from "lucide-react";
+import { X, ImageIcon, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-export default function CreateProductPage() {
+export default function EditProductPage() {
   const router = useRouter();
+  const params = useParams();
+  const productId = params.id as string;
+
   const { shop, loading: shopLoading, hasActiveShop } = useShop();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [platforms, setPlatforms] = useState<PlatformCatalog[]>([]);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [currentThumbnail, setCurrentThumbnail] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const form = useForm<CreateProductInput>({
-    resolver: zodResolver(createProductSchema),
+  const form = useForm<UpdateProductInput>({
+    resolver: zodResolver(updateProductSchema),
     defaultValues: {
-      shopId: "",
-      platformId: "",
       title: "",
       description: "",
-      warrantyPolicy: "Bảo hành 1 đổi 1 trong 30 ngày nếu có lỗi từ nhà sản xuất.",
-      howToUse: "Sau khi thanh toán, key và hướng dẫn sẽ được gửi qua email của bạn.",
+      warrantyPolicy: "",
+      howToUse: "",
       thumbnailUrl: null,
       planType: "Personal",
       durationDays: 30,
@@ -69,10 +73,41 @@ export default function CreateProductPage() {
   });
 
   useEffect(() => {
-    if (shop?._id) {
-      form.setValue("shopId", shop._id);
+    const fetchProduct = async () => {
+      try {
+        const response = await productService.getMyProductById(productId);
+        if (response.success && response.data) {
+          const product = response.data;
+          form.reset({
+            title: product.title,
+            description: product.description,
+            warrantyPolicy: product.warrantyPolicy,
+            howToUse: product.howToUse,
+            thumbnailUrl: product.thumbnailUrl || null,
+            planType: product.planType,
+            durationDays: product.durationDays,
+            price: product.price,
+            platformId: product.platformId,
+          });
+          if (product.thumbnailUrl) {
+            setCurrentThumbnail(product.thumbnailUrl);
+          }
+        } else {
+          toast.error("Không tìm thấy sản phẩm");
+          router.push("/seller/products");
+        }
+      } catch (error) {
+        toast.error("Lỗi khi tải thông tin sản phẩm");
+        router.push("/seller/products");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
     }
-  }, [shop?._id, form]);
+  }, [productId, form, router]);
 
   useEffect(() => {
     const fetchPlatforms = async () => {
@@ -91,14 +126,12 @@ export default function CreateProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)");
       return;
     }
 
-    // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("Kích thước ảnh tối đa là 5MB");
@@ -106,8 +139,8 @@ export default function CreateProductPage() {
     }
 
     setThumbnailFile(file);
+    setCurrentThumbnail(null);
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setThumbnailPreview(reader.result as string);
@@ -118,23 +151,18 @@ export default function CreateProductPage() {
   const handleRemoveImage = () => {
     setThumbnailFile(null);
     setThumbnailPreview(null);
+    setCurrentThumbnail(null);
     form.setValue("thumbnailUrl", null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const onSubmit = async (data: CreateProductInput) => {
-    if (!shop?._id) {
-      toast.error("Vui lòng tạo shop trước khi đăng bán sản phẩm");
-      return;
-    }
-
+  const onSubmit = async (data: UpdateProductInput) => {
     setIsLoading(true);
     try {
-      let thumbnailUrl: string | null = null;
+      let thumbnailUrl: string | null | undefined = currentThumbnail;
 
-      // Upload image if selected
       if (thumbnailFile) {
         setIsUploading(true);
         try {
@@ -148,35 +176,36 @@ export default function CreateProductPage() {
           return;
         }
         setIsUploading(false);
+      } else if (!currentThumbnail && !thumbnailPreview) {
+        thumbnailUrl = null;
       }
 
-      const payload: CreateProductInput = {
+      const payload: UpdateProductInput = {
         ...data,
-        shopId: shop._id,
         durationDays: Number(data.durationDays),
         price: Number(data.price),
         thumbnailUrl: thumbnailUrl,
       };
 
-      const response = await productService.createProduct(payload);
+      const response = await productService.updateProduct(productId, payload);
 
       if (!response.success) {
-        toast.error(response.message || "Lỗi khi tạo sản phẩm");
+        toast.error(response.message || "Lỗi khi cập nhật sản phẩm");
         return;
       }
 
-      toast.success("Sản phẩm đã được tạo và hiển thị công khai!");
-      router.push("/seller");
+      toast.success("Cập nhật sản phẩm thành công!");
+      router.push("/seller/products");
       router.refresh();
     } catch (error) {
       const err = error as ApiError;
-      toast.error(err.message || "Lỗi khi tạo sản phẩm");
+      toast.error(err.message || "Lỗi khi cập nhật sản phẩm");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (shopLoading) {
+  if (shopLoading || isFetching) {
     return (
       <div className="container py-8 max-w-4xl space-y-6">
         <Skeleton className="h-10 w-1/2" />
@@ -199,7 +228,7 @@ export default function CreateProductPage() {
       <div className="container py-8 max-w-4xl text-center">
         <h2 className="text-2xl font-bold mb-4">Bạn chưa có cửa hàng</h2>
         <p className="text-muted-foreground mb-6">
-          Vui lòng tạo một cửa hàng trước khi đăng bán sản phẩm.
+          Vui lòng tạo một cửa hàng trước khi chỉnh sửa sản phẩm.
         </p>
         <Button onClick={() => router.push("/seller/register")}>
           Tạo cửa hàng ngay
@@ -212,18 +241,22 @@ export default function CreateProductPage() {
     <RequireAuth requiredRole="seller">
       <div className="container py-8 max-w-4xl">
         <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Tạo sản phẩm mới</h1>
-            <p className="text-muted-foreground">
-              Thêm sản phẩm mới vào shop. Sản phẩm sẽ được kiểm duyệt trước khi
-              hiển thị công khai.
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/seller/products">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Chỉnh sửa sản phẩm</h1>
+              <p className="text-muted-foreground">
+                Cập nhật thông tin sản phẩm của bạn
+              </p>
+            </div>
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <input type="hidden" {...form.register("shopId")} />
-
               <Card>
                 <CardHeader>
                   <CardTitle>Thông tin cơ bản</CardTitle>
@@ -257,10 +290,10 @@ export default function CreateProductPage() {
                         id="thumbnail-upload"
                       />
 
-                      {thumbnailPreview ? (
+                      {(thumbnailPreview || currentThumbnail) ? (
                         <div className="relative inline-block">
                           <img
-                            src={thumbnailPreview}
+                            src={thumbnailPreview || currentThumbnail || ""}
                             alt="Preview"
                             className="w-40 h-40 object-cover rounded-lg border"
                           />
@@ -357,7 +390,7 @@ export default function CreateProductPage() {
                   <CardTitle>Phân loại & Giá</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                   <FormField
+                  <FormField
                     control={form.control}
                     name="platformId"
                     render={({ field }) => (
@@ -391,7 +424,7 @@ export default function CreateProductPage() {
                     )}
                   />
                   <div className="grid md:grid-cols-3 gap-4">
-                     <FormField
+                    <FormField
                       control={form.control}
                       name="planType"
                       render={({ field }) => (
@@ -479,8 +512,8 @@ export default function CreateProductPage() {
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Hủy
                 </Button>
-                <Button type="submit" disabled={isLoading || isUploading || shopLoading || !hasActiveShop}>
-                  {isUploading ? "Đang tải ảnh..." : isLoading ? "Đang tạo..." : "Tạo sản phẩm"}
+                <Button type="submit" disabled={isLoading || isUploading}>
+                  {isUploading ? "Đang tải ảnh..." : isLoading ? "Đang lưu..." : "Lưu thay đổi"}
                 </Button>
               </div>
             </form>
